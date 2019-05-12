@@ -1,109 +1,138 @@
-/*This Program controls one output, in this case a heater, based on two inputs, in this case temperature sensors.
+/*
+This program is designed to run a heating system to maintain reasonable temperatures in an outdoor shop or to prevent condensation. 
+It runs on an arduino nano, which can be programmed from a laptop or pc.
+
+This program controls one output, in this case a heater, based on two inputs, in this case temperature sensors.
 Inside its main loop, there are two sections, a Control section and a Screen section.
-The computor will continually run the screen section until it is notified by means of a bool flag that a desired amount of time has passed.
+The computor will continually run the screen section until it is notified by means of a built in timer that a desired amount of time has passed.
 It will then enter the control section, and decide if the heater should be on or off.
-then it will reset the flag and return to looping through the screen section until the flag is tripped again.
+then it will reset the timer and return to looping through the screen section until the timer is tripped again.
+ 
+The module has two modes, Heat, and Offset. You can change between modes with the central mode switch on the module.
+In Heat mode the module will maintain a desired temperature setting.
+In Offset mode the module will keep the temperature a set amount above the outside temperature. This prevents
+the shop temp from falling below the outside temp when it warms up in the spring. If the shop is colder than the
+outside air when someone enters the shop the warm air from outside will rush in and condense on the cold tools inside.
+he heat and offset settings are adjusted with the knobs on either side of the switch.
+
+The module has an outlet built in, allowing the use of any standard space heater as a heat source. 
+The module can be turned on and off with the switch next to the outlet.
+There is a replacable fuse underneath the outlet to protect the circuit.
+There are two temperature sensors attached to the module. The inside senser should be placed
+in a central location in whatever area you are trying to heat. The outside sensor should be put
+outside of the area you are trying to heat. 
+
+The switch on the left of the module toggles a status screen on and off. The status screen shows a countdown
+with the time untill the next control, whether the heater is on or off, both temp readings, and the current difference between them.
 */
 
+
+
+// define global variables for dials and the timer.
 int heatdialval;
 int offsetdialval;
 long int lastcontrolTime = millis();
-bool heatflag = true;
-long waitperiod = 5000;
-// define global variables
+unsigned long elapsedtime;
+bool controlflag = true;// A "Flag" that is turned on if the timer has run down. 
+long waitperiod = 300000;// The amount of time between controls in milliseconds.
+
 
 #include <LiquidCrystal.h>
-// initialize the library by associating any needed LCD interface pin
+// initialize the 1602 LCD library by associating any needed LCD interface pin
 // with the arduino pin number it is connected to
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 
-
+// put your setup code here, to run once:
 void setup() {
-  // put your setup code here, to run once:
 Serial.begin(9600);
 
+  //define inputs and outputs
   pinMode(13, INPUT); 
   pinMode(8, INPUT);
   pinMode(6, OUTPUT); 
- //define inputs and outputs
+ 
+// set up the LCD's number of columns and rows:
 lcd.begin(16, 2);
- // set up the LCD's number of columns and rows:
+ 
 }//end of setup
 
 
 
 
 void loop() {
-unsigned long elapsedtime;
+  
+// define variables for both switches.
 int modeswitchValue = digitalRead(13); 
-int statusswitch = digitalRead(8);
-// define variables
+int statusswitchValue = digitalRead(8);
+
 
 
 Serial.println("At Beginning of Loop");
 
-if (heatflag == true){
+if (controlflag == true){
 // Enter Control Section
 Serial.print("In Control Section");
       if (modeswitchValue == HIGH){
-      //Enter Heat Mode
+      //Enter Heat Mode if the switch is on Heat.
       Serial.println("    Heat");
       heatdialval  = (((analogRead(A3))/(40.92))+50);
-             if (intempread() <= (heatdialval)){
-               digitalWrite(6, HIGH);
+             if (intempread() <= (heatdialval)){              //compare the temp to the heat dial setting.
+               digitalWrite(6, HIGH);                    //Turn the heater on.
              }
              else{
-             digitalWrite(6, LOW);
+             digitalWrite(6, LOW);            //Turn the heater off.
              }
       }
       else {
-      // enter Offset Mode
+      // Enter Offset Mode if the switch is on Offset.
       Serial.println("    Offset");
       offsetdialval = ((analogRead(A5))/(102.3));
+            //compare the temp to the offset dial setting.
             if (intempread() <= (outtempread()+offsetdialval)){
-            digitalWrite(6, HIGH);
+            digitalWrite(6, HIGH);          //Turn the heater on.
             }
             else{
-            digitalWrite(6, LOW);
+            digitalWrite(6, LOW);         //Turn the heater off.
             }
       }
       
-//Change heatflag to false and set lastcontrolTime to equal count
+//Change controlflag to false and set lastcontrolTime to equal count. (Turn the flag off and reset the timer.)
 lastcontrolTime = millis();
-heatflag = false;    
+controlflag = false;    
 }
   
 else{
 //enter Screen Section
 Serial.print("In Screen Section");
-      if (statusswitch == LOW){
-      //status screen
+      if (statusswitchValue == LOW){
       Serial.println("    Status");
-      statusscreen();
+      statusscreen();         //Run the status screen function if the status switch is on.
+      
       }
       else if (modeswitchValue == HIGH){
-      // heat screen
       Serial.println("    Heat");
-      heatmodescreen();
+      heatmodescreen();       //Run the heat screen function if the mode switch is on heat.
+      
       }
       else{
-      // offset screen
       Serial.println("    Offset");
-      offsetmodescreen();
+      offsetmodescreen();       //Run the offset screen function if the mode switch is on offset.
+      
       }  
 }
 
 
-//Change heatflag if needed based on time since last control.
+//Change controlflag if needed based on time since last control.(turn the flag on if the timer has run down.)
 elapsedtime = (millis() - (lastcontrolTime));
 if (elapsedtime > waitperiod){
-heatflag = true;}
+controlflag = true;}
+
+
+//Info prints for diagnostics
 Serial.print("Time until next control - ");
 Serial.println((waitperiod/1000)-((elapsedtime)/1000));
-//Info prints for diagnostics
-
 
 
 }//end of loop
@@ -118,7 +147,7 @@ Serial.println((waitperiod/1000)-((elapsedtime)/1000));
 // Temp and Screen Functions
 
 //------------------------------------------------------------------------
-//Inside temp function
+//Inside temp function to convert information from the sensor.
 
 double intempread(){
   double tempF;
@@ -130,7 +159,7 @@ const int THERMISTORNOMINAL = 8430;
 const int TEMPERATURENOMINAL = 25;   
 // how many samples to take and average, more takes longer
 // but is more 'smooth'
-const int NUMSAMPLES = 20;
+const int NUMSAMPLES = 25;
 // The beta coefficient of the thermistor (usually 3000-4000)
 const int BCOEFFICIENT = 3435;
 // the value of the 'other' resistor
@@ -171,12 +200,17 @@ analogReference(EXTERNAL);
  
   tempF  = ((steinhart * 1.8) + 32.0);
  
-//Serial.print("Temperature ");
-//Serial.println(tempF);
+
 return tempF;
 }
+
+
+
+
+
+
 //------------------------------------------------------------------------
-//Outside temp function
+//Outside temp function to convert information from the sensor
 
 double outtempread(){
   double tempF;
@@ -189,7 +223,7 @@ const int THERMISTORNOMINAL = 8430;
 const int TEMPERATURENOMINAL = 25;   
 // how many samples to take and average, more takes longer
 // but is more 'smooth'
-const int NUMSAMPLES = 5;
+const int NUMSAMPLES = 25;
 // The beta coefficient of the thermistor (usually 3000-4000)
 const int BCOEFFICIENT = 3435;
 // the value of the 'other' resistor
@@ -235,16 +269,25 @@ analogReference(EXTERNAL);
 //Serial.println(tempF);
 return tempF;
 }  
+
+
+
+
+
+
   
 //------------------------------------------------------------------------
-//Status screen function
+//Status screen function.
 
   void statusscreen (){
 bool heatpinstatus = digitalRead(6);
 // Check output status
 
 lcd.setCursor(0, 0);
-lcd.print("HEAT OT  IT DIFF");
+lcd.print("     OT  IT DIFF");
+
+lcd.setCursor(0, 0);
+lcd.print((waitperiod/1000)-((elapsedtime)/1000));
 
 lcd.setCursor(0, 1);
 lcd.print("   ");
@@ -334,7 +377,4 @@ lcd.setCursor(15, 1);
 lcd.print("  ");
 //print to lcd
 }  
-    
-    
-    
-    
+  
