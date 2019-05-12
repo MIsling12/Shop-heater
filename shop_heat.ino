@@ -1,29 +1,29 @@
 /*
 This program is designed to run a heating system to maintain reasonable temperatures in an outdoor shop or to prevent condensation. 
-It runs on an arduino nano, which can be programmed from a laptop or pc.
+It runs on an arduino nano microcontroller, which can be programmed from a laptop or pc.
 
 This program controls one output, in this case a heater, based on two inputs, in this case temperature sensors.
 Inside its main loop, there are two sections, a Control section and a Screen section.
 The computor will continually run the screen section until it is notified by means of a built in timer that a desired amount of time has passed.
 It will then enter the control section, and decide if the heater should be on or off.
-then it will reset the timer and return to looping through the screen section until the timer is tripped again.
+Then it will reset the timer and return to looping through the screen section until the timer is tripped again.
  
-The module has two modes, Heat, and Offset. You can change between modes with the central mode switch on the module.
-In Heat mode the module will maintain a desired temperature setting.
-In Offset mode the module will keep the temperature a set amount above the outside temperature. This prevents
+The device has two modes, Heat, and Offset. You can change between modes with the central mode switch on the box.
+In Heat mode the controller will maintain a desired temperature setting.
+In Offset mode the controller will keep the temperature a set amount above the outside temperature. This prevents
 the shop temp from falling below the outside temp when it warms up in the spring. If the shop is colder than the
 outside air when someone enters the shop the warm air from outside will rush in and condense on the cold tools inside.
-he heat and offset settings are adjusted with the knobs on either side of the switch.
+The heat and offset settings are adjusted with the knobs on either side of the mode switch.
 
-The module has an outlet built in, allowing the use of any standard space heater as a heat source. 
-The module can be turned on and off with the switch next to the outlet.
-There is a replacable fuse underneath the outlet to protect the circuit.
-There are two temperature sensors attached to the module. The inside senser should be placed
+The box has an outlet built in, allowing the use of any standard space heater as a heat source. 
+The device can be turned on and off with the switch next to the outlet.
+There is a replaceable 6 amp fuse underneath the outlet to protect the circuit.
+There are two temperature sensors attached to the box. The inside senser should be placed
 in a central location in whatever area you are trying to heat. The outside sensor should be put
 outside of the area you are trying to heat. 
 
-The switch on the left of the module toggles a status screen on and off. The status screen shows a countdown
-with the time untill the next control, whether the heater is on or off, both temp readings, and the current difference between them.
+The switch on the left of the box toggles a status screen on and off. The status screen shows a countdown
+with the time until the next control, whether the heater is on or off, both temp readings, and the current difference between them.
 */
 
 
